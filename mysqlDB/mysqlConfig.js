@@ -14,8 +14,23 @@ var pool  = mysql.createPool({
   user     : 'root',
   password : '123456',
   port: '3306',
-  database : 'lin_test'
+  database : 'test'
 });
 
-module.exports = pool;
+// module.exports = pool;
 
+module.exports = () => {
+  return new Promise((resolve, reject) => {
+    pool.getConnection(function(err, connection) {
+      if(err) {
+        console.log("建立连接失败");
+        console.log(err);
+      }else{
+          console.log("建立连接成功");
+          console.log("连接数："+ pool._allConnections.length);//
+          // Use the connection
+          resolve(connection);
+      }
+    });
+  });
+}
