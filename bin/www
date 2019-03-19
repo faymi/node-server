@@ -3,6 +3,8 @@
 /**
  * Module dependencies.
  */
+// es6
+require('babel-register');
 
 var app = require('../app');
 var debug = require('debug')('node-server:server');

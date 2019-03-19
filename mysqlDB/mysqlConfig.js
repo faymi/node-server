@@ -19,7 +19,7 @@ var pool  = mysql.createPool({
 
 // module.exports = pool;
 
-module.exports = () => {
+let query = (sql) => {
   return new Promise((resolve, reject) => {
     pool.getConnection(function(err, connection) {
       if(err) {
@@ -29,8 +29,19 @@ module.exports = () => {
           console.log("建立连接成功");
           console.log("连接数："+ pool._allConnections.length);//
           // Use the connection
-          resolve(connection);
+
+          connection.query(sql, function (error, results, fields) {
+            resolve(results);
+            connection.release();
+          
+            if (error) {
+              reject(error);
+              throw error;
+            };
+          });
       }
     });
   });
 }
+
+export default query;
