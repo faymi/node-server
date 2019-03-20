@@ -1,11 +1,14 @@
 import crypto from 'crypto'
 import query from '../../mysqlDB/mysqlConfig';
+import baseComponent from '../../util/baseComponent';
 
-class User {
+class User extends baseComponent {
     constructor() {
+        super();
         this.login = this.login.bind(this);
         this.signUp = this.signUp.bind(this);
         this.encryption = this.encryption.bind(this);
+        this.testToken = this.testToken.bind(this);
     }
     async login(req, res, next) {
         let username = req.body.username;
@@ -57,13 +60,15 @@ class User {
                 });
             } else {
                 let addUserSql = `insert into base_user (username, password) values ("${username}", "${password}");`;
+                let token = this.creatToken(username);
                 query(addUserSql).then(results => {
-                    if(results.insertId > 0) {
+                    if(results.insertId >= 0) {
                         res.json({
                             code: 0,
                             msg: "用户注册成功！",
                             data: {
-                                username: username
+                                username: username,
+                                token: token
                             }
                         }); 
                     } else {
@@ -76,6 +81,24 @@ class User {
                 });
             }
         });
+    }
+    testToken(req, res, next) {
+        let token = req.body.token;
+        // let vertify = this.vertifyToken(token);
+        let vertify = this.decodeToken(token);
+        if(vertify) {
+            res.json({
+                code: 0,
+                data: {
+                    decodedToken: vertify
+                }
+            })
+        } else {
+            res.json({
+                code: 1500,
+                msg: 'token校验失败'
+            })
+        }
     }
     encryption(password){
 		const newpassword = this.Md5(this.Md5(password).substr(2, 7) + this.Md5(password));

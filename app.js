@@ -4,6 +4,8 @@ var favicon = require('serve-favicon');
 var logger = require('morgan');
 var cookieParser = require('cookie-parser');
 var bodyParser = require('body-parser');
+const expressJwt = require('express-jwt');
+import {tokenSecret} from './config/defaults'
 
 var router = require('./routes/index');
 // var users = require('./routes/users');
@@ -22,6 +24,21 @@ app.use(bodyParser.urlencoded({ extended: false }));
 app.use(cookieParser());
 app.use(express.static(path.join(__dirname, 'public')));
 
+//使用中间件验证token合法性
+// app.use(expressJwt ({
+//   secret:  tokenSecret 
+// }).unless({
+//   path: ['/apis/login', '/apis/signup', '/apis/getUserInfo']  //除了这些地址，其他的URL都需要验证
+// }));
+
+//拦截器
+// app.use(function (err, req, res, next) {
+//   //当token验证失败时会抛出如下错误
+//   if (err.name === 'UnauthorizedError') {   
+//       //这个需要根据自己的业务逻辑来处理（ 具体的err值 请看下面）
+//       res.status(401).send('invalid token...');
+//   }
+// });
 
 router(app);
 // app.use('/', index);
