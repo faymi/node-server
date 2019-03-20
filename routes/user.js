@@ -29,6 +29,7 @@ async function getAdminQuery(sql, res, req, next) {
 }
 
 router.post('/login', User.login);
+router.post('/signup', User.signUp);
 // router.post('/login', function(req, res, next) {
 //   var sql = 'SELECT * FROM base_user';
 //   User.login(res, req, next);

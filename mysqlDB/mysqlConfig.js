@@ -31,7 +31,7 @@ let query = (sql) => {
           // Use the connection
 
           connection.query(sql, function (error, results, fields) {
-            resolve(results);
+            resolve(JSON.parse(JSON.stringify(results)));
             connection.release();
           
             if (error) {
