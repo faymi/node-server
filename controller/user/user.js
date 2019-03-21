@@ -1,13 +1,11 @@
-import crypto from 'crypto'
 import query from '../../mysqlDB/mysqlConfig';
-import baseComponent from '../../util/baseComponent';
+import BaseComponent from '../../util/baseComponent';
 
-class User extends baseComponent {
+class User extends BaseComponent {
     constructor() {
         super();
         this.login = this.login.bind(this);
         this.signUp = this.signUp.bind(this);
-        this.encryption = this.encryption.bind(this);
         this.testToken = this.testToken.bind(this);
     }
     async login(req, res, next) {
@@ -82,8 +80,8 @@ class User extends baseComponent {
             }
         });
     }
-    testToken(req, res, next) {
-        let token = req.body.token;
+    async testToken(req, res, next) {
+        let token = this.getRequestToken(req);
         let vertify = this.vertifyToken(token);
         // let vertify = this.decodeToken(token);
         if(vertify) {
@@ -100,14 +98,6 @@ class User extends baseComponent {
             })
         }
     }
-    encryption(password){
-		const newpassword = this.Md5(this.Md5(password).substr(2, 7) + this.Md5(password));
-		return newpassword
-	}
-	Md5(password){
-		const md5 = crypto.createHash('md5');
-		return md5.update(password).digest('base64');
-	}
 }
 
 export default new User();

@@ -5,7 +5,8 @@ var logger = require('morgan');
 var cookieParser = require('cookie-parser');
 var bodyParser = require('body-parser');
 const expressJwt = require('express-jwt');
-import {tokenSecret} from './config/defaults'
+import {tokenSecret} from './config/defaults';
+import BaseComponent from './util/baseComponent'
 
 var router = require('./routes/index');
 // var users = require('./routes/users');
@@ -27,16 +28,7 @@ app.use(express.static(path.join(__dirname, 'public')));
 // 使用中间件验证token合法性
 app.use(expressJwt({
   secret:  tokenSecret,
-  getToken: function (req) {
-    if (req.headers.authorization && req.headers.authorization.split(' ')[0] === 'Bearer') {
-        return req.headers.authorization.split(' ')[1];
-    } else if (req.query && req.query.token) {
-      return req.query.token;
-    } else if (req.body && req.body.token) {
-      return req.body.token;
-    }
-    return null;
-  }
+  getToken: new BaseComponent().getRequestToken
 }).unless({
   path: ['/apis/login', '/apis/signup', '/apis/getUserInfo']  //除了这些地址，其他的URL都需要验证
 }));
