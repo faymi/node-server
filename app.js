@@ -24,21 +24,35 @@ app.use(bodyParser.urlencoded({ extended: false }));
 app.use(cookieParser());
 app.use(express.static(path.join(__dirname, 'public')));
 
-//使用中间件验证token合法性
-// app.use(expressJwt ({
-//   secret:  tokenSecret 
-// }).unless({
-//   path: ['/apis/login', '/apis/signup', '/apis/getUserInfo']  //除了这些地址，其他的URL都需要验证
-// }));
+// 使用中间件验证token合法性
+app.use(expressJwt({
+  secret:  tokenSecret,
+  getToken: function (req) {
+    if (req.headers.authorization && req.headers.authorization.split(' ')[0] === 'Bearer') {
+        return req.headers.authorization.split(' ')[1];
+    } else if (req.query && req.query.token) {
+      return req.query.token;
+    } else if (req.body && req.body.token) {
+      return req.body.token;
+    }
+    return null;
+  }
+}).unless({
+  path: ['/apis/login', '/apis/signup', '/apis/getUserInfo']  //除了这些地址，其他的URL都需要验证
+}));
 
-//拦截器
-// app.use(function (err, req, res, next) {
-//   //当token验证失败时会抛出如下错误
-//   if (err.name === 'UnauthorizedError') {   
-//       //这个需要根据自己的业务逻辑来处理（ 具体的err值 请看下面）
-//       res.status(401).send('invalid token...');
-//   }
-// });
+// token拦截器
+app.use(function (err, req, res, next) {
+  //当token验证失败时会抛出如下错误
+  if (err.name === 'UnauthorizedError') {
+    //这个需要根据自己的业务逻辑来处理（具体的err值）
+    res.status(401).json({
+      code: 1500,
+      msg: 'invalid token: ' + err.message,
+      data: null
+    });
+  }
+});
 
 router(app);
 // app.use('/', index);

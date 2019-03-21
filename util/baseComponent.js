@@ -20,13 +20,15 @@ export default class BaseComponent {
     }
     vertifyToken(token) {
         // 解码 token (验证 secret 和检查有效期（exp）)
-        jwt.verify(token, tokenSecret, function(err, decoded) {      
+        let results = null;
+        jwt.verify(token, tokenSecret, function(err, decoded) {
             if (err) {
-                return false;  
+                console.log(err);
             } else {
-                return decoded;
+                results = decoded;
             }
-      });
+        });
+        return results;
     }
     decodeToken(token) {
         let decoded = jwt.decode(token)

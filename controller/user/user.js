@@ -84,8 +84,8 @@ class User extends baseComponent {
     }
     testToken(req, res, next) {
         let token = req.body.token;
-        // let vertify = this.vertifyToken(token);
-        let vertify = this.decodeToken(token);
+        let vertify = this.vertifyToken(token);
+        // let vertify = this.decodeToken(token);
         if(vertify) {
             res.json({
                 code: 0,
@@ -96,7 +96,7 @@ class User extends baseComponent {
         } else {
             res.json({
                 code: 1500,
-                msg: 'token校验失败'
+                msg: 'token无效，请重新登录'
             })
         }
     }
