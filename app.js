@@ -30,7 +30,7 @@ app.use(expressJwt({
   secret:  tokenSecret,
   getToken: new BaseComponent().getRequestToken
 }).unless({
-  path: ['/apis/login', '/apis/signup', '/apis/getUserInfo']  //除了这些地址，其他的URL都需要验证
+  path: ['/apis/login', '/apis/signup', '/apis/getUserInfo', '/worm/screenShot']  //除了这些地址，其他的URL都需要验证
 }));
 
 // token拦截器
