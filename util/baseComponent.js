@@ -36,7 +36,7 @@ export default class BaseComponent {
             name: username,
             timestamp: new Date().getTime()
         }, secret, {
-            expiresIn:  5 * 60 //秒到期时间
+            expiresIn:  '1h' //秒到期时间
         });
         return token;
     }
