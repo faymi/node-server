@@ -1,10 +1,12 @@
 import moment from "moment";
 const puppeteer = require('puppeteer');
 var path = require('path');
+var fs = require('fs');
 
 class Spiker {
     constructor() {
         this.screenshot = this.screenshot.bind(this);
+        this.spideData = this.spideData.bind(this);
     }
 
     async launch() {
@@ -75,6 +77,57 @@ class Spiker {
             height: rect.height + padding * 2
             } : null
         });
+    }
+    async spideData(req, res, next) {
+        console.log('开始')
+        let url = 'https://buy.autohome.com.cn/0/0/0/440000/440100/0-0-0-0.html#pvareaid=2113193';
+        const browser = await this.launch();
+        console.log('浏览器启动')
+        let page = await browser.newPage();
+        await page.goto(decodeURIComponent(url), {
+            waitUntil: 'networkidle2'
+        });
+
+        // 获取页面标题
+        let title = await page.title();
+        console.log(title);
+        console.log('服务正常')
+
+        // 获取车源列表
+        const CAR_LIST_SELECTOR = '.pricebox.recombox.cutprice';
+        const carList = await page.evaluate((sel) => {
+          const carBoxs = [].slice.call(($(sel).find('#div-content ul li')));
+          const ctn = carBoxs.map(v => {
+            const title = $(v).find('.carname .text').text();
+            const price = $(v).find('.price span').text();
+            const imgUrl = $(v).find('.pic img').attr('src');
+            const saleNum = $(v).find('.jump .explain-car').text();
+            const thriftPrice = $(v).find('.jump .explain-price').text();
+            return {
+              title: title,
+              price: price,
+              img: imgUrl,
+              saleNum: saleNum,
+              thriftPrice: thriftPrice
+            };
+          });
+          return ctn;
+        }, CAR_LIST_SELECTOR);
+
+        console.log(`总共${carList.length}辆汽车数据: `, JSON.stringify(carList, undefined, 2));
+
+        // 将车辆信息写入文件
+        let writerStream = fs.createWriteStream('car_info_list.json');
+        writerStream.write(JSON.stringify(carList, undefined, 2), 'UTF8');
+        writerStream.end();
+
+        await browser.close()
+        console.log('服务正常结束');
+        res.json({
+          code: 0,
+          data: carList,
+          msg: 'success'
+        })
     }
 
 }
