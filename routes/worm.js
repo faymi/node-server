@@ -3,6 +3,7 @@ var router = express.Router();
 import Spiker from '../controller/worm/spider'
 
 router.post('/screenShot', Spiker.screenshot);
-router.post('/spideData', Spiker.spideData);
+router.get('/spideData', Spiker.spideData);
+router.get('/spideManhua', Spiker.spideManhua);
 
 module.exports = router;

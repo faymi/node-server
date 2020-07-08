@@ -7,6 +7,7 @@ class Spiker {
     constructor() {
         this.screenshot = this.screenshot.bind(this);
         this.spideData = this.spideData.bind(this);
+        this.spideManhua = this.spideManhua.bind(this);
     }
 
     async launch() {
@@ -23,6 +24,19 @@ class Spiker {
                 scrollHeight: document.documentElement.scrollHeight
             }
         });
+    }
+    async getCookie(page) {
+        const cookieArr = await page.evaluate(() => {
+            return document.cookie.match(/(\w+)=([\w\\/.%-_#@!$&~]+)/g);
+        });
+        let cookie = {};
+        cookieArr.forEach((v, k) => {
+            const item = v.split('=');
+            const key = item[0];
+            const val = item[1];
+            cookie[key] = val;
+        });
+        return cookie;
     }
     async screenshot(req, res, next) {
         let url = req.body.url;
@@ -151,6 +165,61 @@ class Spiker {
           data: carList,
           msg: 'success'
         })
+    }
+
+    async spideManhua(req, res, next) {
+        console.log('开始')
+        let url = 'https://manhua.fzdm.com/39/91/index_0.html';
+        const browser = await this.launch();
+        console.log('浏览器启动')
+        let page = await browser.newPage();
+        await page.goto(decodeURIComponent(url), {
+            waitUntil: 'networkidle2'
+        });
+
+        let count = 0;
+        await this.getManhuaData(page, count);
+        console.log(count);
+
+        await browser.close()
+        console.log('服务正常结束');
+        res.json({
+          code: 0,
+          data: '',
+          msg: 'success'
+        });
+    }
+
+    async getManhuaData(page, count) {
+        // 获取页面标题
+        var title = await page.title();
+        console.log(title);
+        const cookie = await this.getCookie(page);
+        // 图片主机地址
+        const picHost = decodeURIComponent(cookie.picHost);
+        // 获取图片
+        const CAR_LIST_SELECTOR = '#pjax-container';
+        var img = await page.evaluate((sel) => {
+          const pic = $(sel).find('#mhimg0 a img').attr('src');
+          return pic;
+        }, CAR_LIST_SELECTOR);
+
+        const picSrc = /^http:\/\/\//g.test(img) ? img.replace(/http:\/\//g, picHost) : img;
+        console.log(`图片数据: `, picSrc);
+
+        const nextButtonClassName = '.navigation a.pure-button.pure-button-primary';
+        // let nextBtn = await page.$(nextButtonClassName);
+        await page.$eval(nextButtonClassName, el => {
+            el.forEach(async n => {
+                if(n.innerText !== '下一话吧') {
+                    await nextBtn[1].click();
+                    count++;
+                    // await page.waitFor(2500);
+                    await page.waitForNavigation();
+                    await this.getManhuaData(page, count);
+                }
+            });
+        });
     }
 
 }
