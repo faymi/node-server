@@ -177,9 +177,7 @@ class Spiker {
             waitUntil: 'networkidle2'
         });
 
-        let count = 0;
-        await this.getManhuaData(page, count);
-        console.log(count);
+        await this.getManhuaData(page);
 
         await browser.close()
         console.log('服务正常结束');
@@ -190,7 +188,7 @@ class Spiker {
         });
     }
 
-    async getManhuaData(page, count) {
+    async getManhuaData(page) {
         // 获取页面标题
         var title = await page.title();
         console.log(title);
@@ -207,19 +205,28 @@ class Spiker {
         const picSrc = /^http:\/\/\//g.test(img) ? img.replace(/http:\/\//g, picHost) : img;
         console.log(`图片数据: `, picSrc);
 
-        const nextButtonClassName = '.navigation a.pure-button.pure-button-primary';
-        // let nextBtn = await page.$(nextButtonClassName);
-        await page.$eval(nextButtonClassName, el => {
-            el.forEach(async n => {
-                if(n.innerText !== '下一话吧') {
-                    await nextBtn[1].click();
-                    count++;
-                    // await page.waitFor(2500);
-                    await page.waitForNavigation();
-                    await this.getManhuaData(page, count);
-                }
-            });
+        const nextButtonClassName = '.navigation a.pure-button.pure-button-primary:last-child';
+        let nextBtn = await page.$(nextButtonClassName);
+
+        const text = await page.$eval(nextButtonClassName, el => {
+            //如果需要赋值要返回Promise
+            return el.innerText;
         });
+
+        console.log(text);
+        
+        if(text !== '下一话吧') {
+            try {
+                await nextBtn.click();
+                // await page.waitForNavigation();
+                await page.waitFor(1000);
+                await this.getManhuaData(page);
+            } catch (error) {
+                await page.reload();
+                await page.waitFor(2000);
+                await this.getManhuaData(page);
+            }
+        }
     }
 
 }
