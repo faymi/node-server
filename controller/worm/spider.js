@@ -169,7 +169,8 @@ class Spiker {
 
     async spideManhua(req, res, next) {
         console.log('开始')
-        let url = 'https://manhua.fzdm.com/39/91/index_0.html';
+        let url = 'https://manhua.fzdm.com/39/129/';
+        // let url = 'https://manhua.fzdm.com/2/984/';
         const browser = await this.launch();
         console.log('浏览器启动')
         let page = await browser.newPage();
@@ -177,7 +178,9 @@ class Spiker {
             waitUntil: 'networkidle2'
         });
 
-        await this.getManhuaData(page);
+        const data = [];
+        await this.getManhuaData(page, data);
+        console.log(data);
 
         await browser.close()
         console.log('服务正常结束');
@@ -188,45 +191,63 @@ class Spiker {
         });
     }
 
-    async getManhuaData(page) {
-        // 获取页面标题
-        var title = await page.title();
-        console.log(title);
+    async getManhuaData(page, data) {
         const cookie = await this.getCookie(page);
         // 图片主机地址
         const picHost = decodeURIComponent(cookie.picHost);
         // 获取图片
         const CAR_LIST_SELECTOR = '#pjax-container';
         var img = await page.evaluate((sel) => {
-          const pic = $(sel).find('#mhimg0 a img').attr('src');
-          return pic;
+          const src = $(sel).find('#mhimg0 img').attr('src');
+          const title = $(sel).find('h1').text();
+          return {
+              src,
+              title
+          };
         }, CAR_LIST_SELECTOR);
 
-        const picSrc = /^http:\/\/\//g.test(img) ? img.replace(/http:\/\//g, picHost) : img;
+        const src = img.src;
+        const title = img.title;
+        const picSrc = /^http:\/\/\//g.test(src) ? src.replace(/http:\/\//g, picHost) : src;
+        console.log(`title: `, title);
         console.log(`图片数据: `, picSrc);
 
-        const nextButtonClassName = '.navigation a.pure-button.pure-button-primary:last-child';
-        let nextBtn = await page.$(nextButtonClassName);
+        data.push({
+            src: picSrc,
+            host: picHost,
+            title,
+            chapter: title.match(/[0-9]+/g)[0],
+            page: title.match(/[0-9]+/g)[1] || 1,
+            name: title.match(/([\u4e00-\u9fa5]+)/g)[0]
+        })
 
+        const nextButtonClassName = '.navigation a.pure-button.pure-button-primary:last-child';
+        
+        let nextBtn = await page.$(nextButtonClassName);
+        // 不存在’下一页‘或者’下一话吧‘按钮，则退出
+        if(!nextBtn) {
+            console.log('return')
+            return;
+        };
         const text = await page.$eval(nextButtonClassName, el => {
             //如果需要赋值要返回Promise
             return el.innerText;
         });
-
         console.log(text);
+
         
-        if(text !== '下一话吧') {
+        if(text == '下一页' || text == '下一话吧') {
             try {
                 await nextBtn.click();
                 // await page.waitForNavigation();
-                await page.waitFor(1000);
-                await this.getManhuaData(page);
+                await this.getManhuaData(page, data);
             } catch (error) {
                 await page.reload();
                 await page.waitFor(2000);
-                await this.getManhuaData(page);
+                await this.getManhuaData(page, data);
             }
         }
+        return;
     }
 
 }
