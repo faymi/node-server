@@ -2,9 +2,12 @@ import moment from "moment";
 const puppeteer = require('puppeteer');
 var path = require('path');
 var fs = require('fs');
+import BaseComponent from '../../util/baseComponent';
+import query from '../../mysqlDB/mysqlConfig';
 
-class Spiker {
+class Spiker extends BaseComponent {
     constructor() {
+        super();
         this.screenshot = this.screenshot.bind(this);
         this.spideData = this.spideData.bind(this);
         this.spideManhua = this.spideManhua.bind(this);
@@ -169,7 +172,7 @@ class Spiker {
 
     async spideManhua(req, res, next) {
         console.log('开始')
-        let url = 'https://manhua.fzdm.com/39/129/';
+        let url = 'https://manhua.fzdm.com/39/001/';
         // let url = 'https://manhua.fzdm.com/2/984/';
         const browser = await this.launch();
         console.log('浏览器启动')
@@ -212,14 +215,16 @@ class Spiker {
         console.log(`title: `, title);
         console.log(`图片数据: `, picSrc);
 
-        data.push({
+        const pushData = {
             src: picSrc,
             host: picHost,
             title,
             chapter: title.match(/[0-9]+/g)[0],
             page: title.match(/[0-9]+/g)[1] || 1,
             name: title.match(/([\u4e00-\u9fa5]+)/g)[0]
-        })
+        }
+
+        data.push(pushData);
 
         const nextButtonClassName = '.navigation a.pure-button.pure-button-primary:last-child';
         
@@ -237,6 +242,7 @@ class Spiker {
 
         
         if(text == '下一页' || text == '下一话吧') {
+            await this.inserDataToDb(pushData);
             try {
                 await nextBtn.click();
                 // await page.waitForNavigation();
@@ -248,6 +254,18 @@ class Spiker {
             }
         }
         return;
+    }
+
+    async inserDataToDb(data) {
+        const { chapter, page, src: cdn_img_src, host: cdn_host } = data
+        let addUserSql = `insert into cartoon_storage (cartoon_id, chapter, page, cdn_img_src, cdn_host) values ("2", "${chapter}", "${page}", "${cdn_img_src}", "${cdn_host}");`;
+        await query(addUserSql).then(results => {
+            if(results.insertId >= 0) {
+                console.log('数据插入成功！')
+            } else {
+                console.log('数据插入失败！')
+            }
+        });
     }
 
 }
