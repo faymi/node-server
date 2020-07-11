@@ -29,15 +29,10 @@ class Spiker extends BaseComponent {
         });
     }
     async getCookie(page) {
-        const cookieArr = await page.evaluate(() => {
-            return document.cookie.match(/(\w+)=([\w\\/.%-_#@!$&~]+)/g);
-        });
+        const cookies = await page.cookies();
         let cookie = {};
-        cookieArr.forEach((v, k) => {
-            const item = v.split('=');
-            const key = item[0];
-            const val = item[1];
-            cookie[key] = val;
+        cookies.forEach((v, k) => {
+            cookie[v['name']] = v['value'];
         });
         return cookie;
     }
@@ -172,8 +167,8 @@ class Spiker extends BaseComponent {
 
     async spideManhua(req, res, next) {
         console.log('开始')
-        let url = 'https://manhua.fzdm.com/39/001/';
-        // let url = 'https://manhua.fzdm.com/2/984/';
+        let url = 'https://manhua.fzdm.com/39/078/';
+        // let url = 'https://manhua.fzdm.com/2/983/';
         const browser = await this.launch();
         console.log('浏览器启动')
         let page = await browser.newPage();
@@ -242,14 +237,18 @@ class Spiker extends BaseComponent {
 
         
         if(text == '下一页' || text == '下一话吧') {
-            await this.inserDataToDb(pushData);
+            if(text == '下一话吧') {
+                await this.inserDataToDb(data);
+                data = new Array();
+            }
             try {
                 await nextBtn.click();
-                // await page.waitForNavigation();
+                await page.waitForNavigation();
                 await this.getManhuaData(page, data);
             } catch (error) {
+                console.log('捕获异常：', error)
                 await page.reload();
-                await page.waitFor(2000);
+                await page.waitFor(1500);
                 await this.getManhuaData(page, data);
             }
         }
@@ -257,13 +256,13 @@ class Spiker extends BaseComponent {
     }
 
     async inserDataToDb(data) {
-        const { chapter, page, src: cdn_img_src, host: cdn_host } = data
-        let addUserSql = `insert into cartoon_storage (cartoon_id, chapter, page, cdn_img_src, cdn_host) values ("2", "${chapter}", "${page}", "${cdn_img_src}", "${cdn_host}");`;
-        await query(addUserSql).then(results => {
+        const sql_val = data.map((val)=> `("2", "${val.chapter}", "${val.page}", "${val.src}", "${val.host}")`);
+        let addDataSql = `insert into cartoon_storage (cartoon_id, chapter, page, cdn_img_src, cdn_host) values ${sql_val};`;
+        await query(addDataSql).then(results => {
             if(results.insertId >= 0) {
-                console.log('数据插入成功！')
+                console.log('数据插入成功！');
             } else {
-                console.log('数据插入失败！')
+                console.log('数据插入失败！');
             }
         });
     }
