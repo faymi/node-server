@@ -226,7 +226,9 @@ class Spiker extends BaseComponent {
         let nextBtn = await page.$(nextButtonClassName);
         // 不存在’下一页‘或者’下一话吧‘按钮，则退出
         if(!nextBtn) {
-            console.log('return')
+            console.log('return');
+            await this.inserDataToDb(data);
+            data = new Array();
             return;
         };
         const text = await page.$eval(nextButtonClassName, el => {
